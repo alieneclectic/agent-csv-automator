@@ -17,11 +17,11 @@ The application follows these steps to provide responses to your questions:
 
 4. Similarity Matching: When you ask a question, the app compares it with the text chunks and identifies the most semantically similar ones.
 
-5. Response Generation: The selected chunks are passed to the language model, which generates a response based on the relevant content of the PDFs.
+5. Response Generation: The selected chunks are passed to the language model, which generates a response based on the relevant content of the documents.
 
 ## Dependencies and Installation
 ----------------------------
-To install the MultiPDF Chat App, please follow these steps:
+To install the Agent CSV Generator App, please follow these steps:
 
 1. Clone the repository to your local machine.
 
@@ -34,7 +34,7 @@ To install the MultiPDF Chat App, please follow these steps:
 
 ## Usage
 -----
-To use the MultiPDF Chat App, follow these steps:
+To use the Agent CSV Generator App, follow these steps:
 
 1. Ensure that you have installed the required dependencies and added the OpenAI API key to the `.env` file.
 
@@ -45,10 +45,10 @@ To use the MultiPDF Chat App, follow these steps:
 
 3. The application will launch in your default web browser, displaying the user interface.
 
-4. Load multiple PDF documents into the app by following the provided instructions.
+4. Load multiple documents into the app by following the provided instructions.
 
-5. Ask questions in natural language about the loaded PDFs using the chat interface.
+5. Ask questions in natural language about the loaded documents using the chat interface.
 
 ## License
 -------
-The MultiPDF Chat App is released under the [MIT License](https://opensource.org/licenses/MIT).
+The Agent CSV Generator App is released under the [MIT License](https://opensource.org/licenses/MIT).
