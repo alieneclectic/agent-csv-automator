@@ -1,19 +1,15 @@
-# MultiPDF Chat App
-
-> You can find the tutorial for this project on [YouTube](https://youtu.be/dXxQ0LR-3Hg).
+# Agent CSV Generator
 
 ## Introduction
 ------------
-The MultiPDF Chat App is a Python application that allows you to chat with multiple PDF documents. You can ask questions about the PDFs using natural language, and the application will provide relevant responses based on the content of the documents. This app utilizes a language model to generate accurate answers to your queries. Please note that the app will only respond to questions related to the loaded PDFs.
+Agent CSV Generator is a Python application that allows you to chat with multiple documents. These documents can be used to tward the generation oc CSV data feeds. 
 
 ## How It Works
 ------------
 
-![MultiPDF Chat App Diagram](./docs/PDF-LangChain.jpg)
-
 The application follows these steps to provide responses to your questions:
 
-1. PDF Loading: The app reads multiple PDF documents and extracts their text content.
+1. Document Loading: The app reads multiple documents and extracts their text content.
 
 2. Text Chunking: The extracted text is divided into smaller chunks that can be processed effectively.
 
@@ -52,10 +48,6 @@ To use the MultiPDF Chat App, follow these steps:
 4. Load multiple PDF documents into the app by following the provided instructions.
 
 5. Ask questions in natural language about the loaded PDFs using the chat interface.
-
-## Contributing
-------------
-This repository is intended for educational purposes and does not accept further contributions. It serves as supporting material for a YouTube tutorial that demonstrates how to build this project. Feel free to utilize and enhance the app based on your own requirements.
 
 ## License
 -------
