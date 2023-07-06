@@ -14,8 +14,6 @@ from langchain.tools.file_management import (
 from langchain.agents.agent_toolkits import FileManagementToolkit
 from tempfile import TemporaryDirectory
 
-from custom_tools import Local_Documents
-
 from dotenv import load_dotenv
 
 working_directory = TemporaryDirectory()
@@ -23,15 +21,18 @@ toolkit = FileManagementToolkit(
     root_dir=str(working_directory.name)
 )
 
+from custom_tools import Custom_Tools
+local_documents = Custom_Tools.get_document_retrieval_chain()
+
 load_dotenv()
 llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613")
 toolkit.get_tools()
 search = SerpAPIWrapper()
 llm_math_chain = LLMMathChain.from_llm(llm=llm, verbose=True)
-local_documents = Local_Documents()
 
 #Agent Tools
 #tools = load_tools(["llm-math", "serpapi"], llm=llm)
+
 tools = [
     Tool(
         name = "Search",
@@ -46,7 +47,7 @@ tools = [
     Tool(
         name="Local_Documents",
         func=local_documents.run,
-        description="useful for when you need to ask a question about documents uploaded to the local file system"
+        description="useful for when you need to answer questions about local documents, documents stored in vector storage, or uploaded documents"
     )
     # Tool(
     #     name="ReadFileTool",

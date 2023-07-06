@@ -1,7 +1,5 @@
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
-from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationalRetrievalChain
 from langchain.embeddings import OpenAIEmbeddings, HuggingFaceInstructEmbeddings
 #from langchain.llms import HuggingFaceHub
 from langchain.vectorstores import FAISS
@@ -14,26 +12,10 @@ import pandas as pd
 
 load_dotenv()
 
-llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613")
-llm2 = OpenAI(temperature=0, model="gpt-3.5-turbo-0613")
+llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo")
 # llm = HuggingFaceHub(repo_id="google/flan-t5-xxl", model_kwargs={"temperature":0.5, "max_length":512})
 
 class DocumentStorage():
-
-    def get_document_retrieval_chain(query):
-        response = st.session_state.document_history.append(query)
-        embeddings = OpenAIEmbeddings()
-        vectorstore = FAISS.load_local("faiss_index", embeddings)
-
-        if response is not None:
-            st.session_state.document_history = response["document_history"]
-
-        document_conversation_chain = ConversationalRetrievalChain.from_llm(
-            llm=llm2,
-            retriever=vectorstore.as_retriever(),
-            memory=ConversationBufferMemory(memory_key="document_history", return_messages=True)
-        )
-        return document_conversation_chain
     
     def get_vectorstore(text_chunks, doc_type, doc_name, embeddings_model="OpenAIEmbeddings"):
         metadatas = [{"type": doc_type, "name": doc_name} for _ in range(len(text_chunks))]
@@ -46,10 +28,12 @@ class DocumentStorage():
         
         vectorstore = FAISS.from_texts(texts=text_chunks, embedding=embeddings, metadatas=metadatas)
         vectorstore.save_local("faiss_index")
+
         return vectorstore
     
 
 class DocumentProcessing():
+
     def get_text_file_content(text_files):
         text = ""
         for text_file in text_files:
