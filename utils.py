@@ -7,25 +7,18 @@ from langchain.text_splitter import CharacterTextSplitter
 from PyPDF2 import PdfReader
 from dotenv import load_dotenv
 from docx import Document
-import streamlit as st
 import pandas as pd
 
 load_dotenv()
 
 llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo")
+embeddings = OpenAIEmbeddings()
 # llm = HuggingFaceHub(repo_id="google/flan-t5-xxl", model_kwargs={"temperature":0.5, "max_length":512})
 
 class DocumentStorage():
     
-    def get_vectorstore(text_chunks, doc_type, doc_name, embeddings_model="OpenAIEmbeddings"):
+    def set_document_vectorstore(text_chunks, doc_type, doc_name):
         metadatas = [{"type": doc_type, "name": doc_name} for _ in range(len(text_chunks))]
-        if embeddings_model == "OpenAIEmbeddings":
-            embeddings = OpenAIEmbeddings()
-        elif embeddings_model == "HuggingFaceInstructEmbeddings":
-            embeddings = HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-xl")
-        else:
-            raise ValueError(f"Unsupported embeddings model: {embeddings_model}")
-        
         vectorstore = FAISS.from_texts(texts=text_chunks, embedding=embeddings, metadatas=metadatas)
         vectorstore.save_local("faiss_index")
 
@@ -38,7 +31,7 @@ class DocumentProcessing():
         text = ""
         for text_file in text_files:
             text += text_file.read().decode("utf-8")
-            return text
+        return text
 
     def get_csv_file_content(csv_files):
         text = ""

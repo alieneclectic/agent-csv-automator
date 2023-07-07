@@ -1,18 +1,19 @@
 import streamlit as st
 from htmlTemplates import css, bot_template, user_template
 from utils import DocumentStorage, DocumentProcessing
-from langchain.memory import ConversationBufferMemory
 from agent import Agent
-
-agent = Agent.initialize_agent()
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import FAISS
+import pandas as pd
 
 def handle_userinput(user_question):
     if user_question:
 
-        st.session_state.conversation = agent
-
         response = st.session_state.conversation({'input': user_question})
-        st.session_state.chat_history = response['chat_history']
+
+        # Append the response to the existing chat history
+        if 'chat_history' in response:
+            st.session_state.chat_history.extend(response['chat_history'])
 
         # Reverse the chat history in pairs
         reversed_chat_history = list(reversed([st.session_state.chat_history[i:i+2] for i in range(0, len(st.session_state.chat_history), 2)]))
@@ -26,20 +27,21 @@ def handle_userinput(user_question):
                 st.write(bot_template.replace(
                     "{{MSG}}", message.content), unsafe_allow_html=True)
 
+
+
 def handle_document_upload():
     with st.sidebar:
-        st.subheader("Your documents")
+        st.subheader("Documents")
         uploaded_docs = st.file_uploader(
-            "Upload your documents here and click on 'Process'", type=['pdf', 'docx', 'txt', 'csv'], accept_multiple_files=True)
+            "Upload your documents here and click on 'Upload'", type=['pdf', 'docx', 'txt'], accept_multiple_files=True)
         if uploaded_docs:
             st.session_state.uploaded_docs = uploaded_docs
-        if st.button("Upload & Process"):
+        if st.button("Upload Documents", key="button1"):
             if not st.session_state.uploaded_docs:
                 st.warning("Please upload a document first before processing.")
             else:
                 with st.spinner("Processing"):
                     raw_text = ""
-                    
                     for doc in st.session_state.uploaded_docs:
                         if doc.type == "application/pdf":
                             raw_text += DocumentProcessing.get_pdf_file_content([doc])
@@ -50,16 +52,46 @@ def handle_document_upload():
                         elif doc.type == "text/csv":
                             raw_text += DocumentProcessing.get_csv_file_content([doc])
                             
-
                     text_chunks = DocumentProcessing.get_text_chunks(raw_text, chunk_size=1000, chunk_overlap=100)
-
                     # create vector store
-                    vectorstore = DocumentStorage.get_vectorstore(text_chunks, doc.type, doc.name)
+                    vectorstore = DocumentStorage.set_document_vectorstore(text_chunks, doc.type, doc.name)
+                          
                     
+def handle_csv_upload():
+    with st.sidebar:
+        st.subheader("CSVs")
+        uploaded_csv = st.file_uploader(
+            "Upload your CSVs here and click on 'Upload'", type=['csv'], accept_multiple_files=True)
+        if uploaded_csv:
+            st.session_state.uploaded_csv = uploaded_csv
+        if st.button("Upload & CSV", key="button2"):
+            if not st.session_state.uploaded_csv:
+                st.warning("Please upload a document first before processing.")
+            else:
+                with st.spinner("Processing"):
+                    dfs = []
+                    for doc in st.session_state.uploaded_csv:
+                        dfs.append(pd.read_csv(doc))
+
+                    # Concatenate all data into one DataFrame
+                    concat_frame = pd.concat(dfs, ignore_index=True)
+                    st.session_state.df = concat_frame
                     
 
 def main():
-    st.set_page_config(page_title="Craft LLM Automation", page_icon=":books:")
+
+    embeddings = OpenAIEmbeddings()
+    vectorstore = FAISS.load_local("faiss_index", embeddings)
+
+    #init  local vector storage 
+    if not vectorstore:
+        vectorstore = FAISS.from_texts(texts=[""], embedding=embeddings) 
+        vectorstore.save_local("faiss_index")
+
+    agent = Agent.initialize_conversational_agent()
+    st.session_state.conversation = agent
+
+    st.set_page_config(page_title="Craft LLM Automation", page_icon=":stars:")
     #remove the streamlit logo
     st.write(css, unsafe_allow_html=True)
     hide_streamlit_style = """
@@ -68,7 +100,7 @@ def main():
             footer {visibility: hidden;}
             </style>
             """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
     if "conversation" not in st.session_state:
         st.session_state.conversation = None
@@ -76,17 +108,17 @@ def main():
         st.session_state.chat_history = []
     if "uploaded_docs" not in st.session_state:
         st.session_state.uploaded_docs = None
+    if "df" not in st.session_state:
+        st.session_state.df = pd.DataFrame()
 
     st.header("Craft LLM Automation POC:")
-    user_question = st.text_input("Ask a question about your documents:")
+    user_question = st.text_input("Ask a question about your documents:", key='user_input')
 
     handle_document_upload()
+    handle_csv_upload()
 
-    handle_userinput(user_question)
-
-    # # Add a "Clear Chat" button
-    # if st.button("Clear Chat"):
-    #     st.session_state.chat_history = None
+    if user_question:
+        handle_userinput(user_question)
 
 
 if __name__ == '__main__':
