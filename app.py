@@ -4,6 +4,7 @@ from utils import DocumentStorage, DocumentProcessing
 from agent import Agent
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
+from custom_tools import Custom_Tools
 import pandas as pd
 
 def handle_userinput(user_question):
@@ -76,6 +77,7 @@ def handle_csv_upload():
                     # Concatenate all data into one DataFrame
                     concat_frame = pd.concat(dfs, ignore_index=True)
                     st.session_state.df = concat_frame
+                    #csv_tool = Custom_Tools.get_csv_retrieval_chain(st.session_state.df)
                     
 
 def main():
@@ -111,8 +113,8 @@ def main():
     if "df" not in st.session_state:
         st.session_state.df = pd.DataFrame()
 
-    st.header("Craft LLM Automation POC:")
-    user_question = st.text_input("Ask a question about your documents:", key='user_input')
+    st.header("Craft LLM POC:")
+    user_question = st.text_input("Ask a question about your documents:")
 
     handle_document_upload()
     handle_csv_upload()

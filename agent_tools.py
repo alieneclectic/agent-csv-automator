@@ -25,10 +25,6 @@ toolkit = FileManagementToolkit(
 
 if "df" not in st.session_state:
     st.session_state.df = pd.DataFrame()
-local_documents = Custom_Tools.get_document_retrieval_chain()
-local_csv = Custom_Tools.get_csv_retrieval_chain()
-
-
 
 load_dotenv()
 
@@ -52,16 +48,16 @@ tools = [
     Tool(
         name="Calculator",
         func=llm_math_chain.run,
-        description="useful for when you need to answer questions about math."
+        description="useful for when you need to answer questions about math. Input should be a valid numerical expression"
     ),
     Tool(
         name="Local_Documents",
-        func=local_documents.run,
+        func=Custom_Tools.get_document_retrieval_chain().run,
         description="useful for when you need to answer questions about local documents, documents stored in vector storage, or uploaded documents. Input should be a fully formed question."
     ),
     Tool(
         name="CSV_Data",
-        func=local_csv.run,
+        func=Custom_Tools.get_csv_retrieval_chain(st.session_state.df).run,
         description="useful for when you need to answer questions about csv documents, or an uploaded csv. Input should be a fully formed question."
     ),
     Tool(

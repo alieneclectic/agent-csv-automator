@@ -27,18 +27,7 @@ class Custom_Tools():
 
         return document_conversation_chain
 
-
-    def get_csv_retrieval_chain():
-
-
-        # Print the DataFrame for debugging
-        
-
-         # Check if the dataframe in the session state is not empty
-        if st.session_state.df.empty:
-            df = pd.DataFrame()
-        else:
-            df = st.session_state.df
+    def get_csv_retrieval_chain(df):
 
         csv_retrieval_chain = create_pandas_dataframe_agent(OpenAI(temperature=0), df, verbose=True)
 
