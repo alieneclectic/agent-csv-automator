@@ -1,20 +1,35 @@
 import streamlit as st
-from htmlTemplates import css, bot_template, user_template
-from utils import DocumentStorage, DocumentProcessing
-from agent import Agent
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
+from htmlTemplates import css, bot_template, user_template
+from utils import DocumentStorage, DocumentProcessing
 from custom_tools import Custom_Tools
+from agent import Agent
 import pandas as pd
+import openai
+
 
 def handle_userinput(user_question):
     if user_question:
 
-        response = st.session_state.conversation({'input': user_question})
+        agent = Agent.initialize_conversational_agent()
+        st.session_state.conversation = agent
+
+        # Truncate or summarize the conversation history if it's too long
+        if len(st.session_state.chat_history) > 1000:
+            st.session_state.chat_history = st.session_state.chat_history[-1000:]
+
+        try:
+            #call the OpenAI API
+            response = st.session_state.conversation({'input': user_question})
+        except openai.error.InvalidRequestError as e:
+            # Handle the error
+            st.error(f"Error: {str(e)}")
 
         # Append the response to the existing chat history
         if 'chat_history' in response:
-            st.session_state.chat_history.extend(response['chat_history'])
+            #st.session_state.chat_history.extend(response['chat_history'])
+            st.session_state.chat_history = response['chat_history']
 
         # Reverse the chat history in pairs
         reversed_chat_history = list(reversed([st.session_state.chat_history[i:i+2] for i in range(0, len(st.session_state.chat_history), 2)]))
@@ -77,7 +92,9 @@ def handle_csv_upload():
                     # Concatenate all data into one DataFrame
                     concat_frame = pd.concat(dfs, ignore_index=True)
                     st.session_state.df = concat_frame
-                    #csv_tool = Custom_Tools.get_csv_retrieval_chain(st.session_state.df)
+                    csv_tool = Custom_Tools.get_csv_retrieval_chain(st.session_state.df)
+
+                    
                     
 
 def main():
@@ -89,9 +106,6 @@ def main():
     if not vectorstore:
         vectorstore = FAISS.from_texts(texts=[""], embedding=embeddings) 
         vectorstore.save_local("faiss_index")
-
-    agent = Agent.initialize_conversational_agent()
-    st.session_state.conversation = agent
 
     st.set_page_config(page_title="Craft LLM Automation", page_icon=":stars:")
     #remove the streamlit logo
@@ -119,9 +133,12 @@ def main():
     handle_document_upload()
     handle_csv_upload()
 
+    # agent = Agent.initialize_conversational_agent()
+    # st.session_state.conversation = agent
+
     if user_question:
         handle_userinput(user_question)
 
-
+    
 if __name__ == '__main__':
     main()
