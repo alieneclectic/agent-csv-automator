@@ -82,12 +82,12 @@ def handle_csv_upload():
             st.session_state.uploaded_csv = uploaded_csv
         if st.button("Upload & CSV", key="button2"):
             if not st.session_state.uploaded_csv:
-                st.warning("Please upload a document first before processing.")
+                st.warning("Please upload a CSV first before processing.")
             else:
                 with st.spinner("Processing"):
                     dfs = []
-                    for doc in st.session_state.uploaded_csv:
-                        dfs.append(pd.read_csv(doc))
+                    for csv in st.session_state.uploaded_csv:
+                        dfs.append(pd.read_csv(csv))
 
                     # Concatenate all data into one DataFrame
                     concat_frame = pd.concat(dfs, ignore_index=True)
@@ -98,7 +98,6 @@ def handle_csv_upload():
                     
 
 def main():
-
     embeddings = OpenAIEmbeddings()
     vectorstore = FAISS.load_local("faiss_index", embeddings)
 
@@ -124,6 +123,8 @@ def main():
         st.session_state.chat_history = []
     if "uploaded_docs" not in st.session_state:
         st.session_state.uploaded_docs = None
+    if "uploaded_csv" not in st.session_state:
+        st.session_state.uploaded_csv = None
     if "df" not in st.session_state:
         st.session_state.df = pd.DataFrame()
 
@@ -132,9 +133,6 @@ def main():
 
     handle_document_upload()
     handle_csv_upload()
-
-    # agent = Agent.initialize_conversational_agent()
-    # st.session_state.conversation = agent
 
     if user_question:
         handle_userinput(user_question)

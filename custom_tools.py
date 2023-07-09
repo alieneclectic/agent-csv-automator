@@ -14,7 +14,6 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-import pandas as pd
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -39,6 +38,31 @@ class Custom_Tools():
     def get_csv_retrieval_chain(df):
 
         csv_retrieval_chain = create_pandas_dataframe_agent(OpenAI(temperature=0), df, verbose=True)
+
+        return csv_retrieval_chain
+    
+
+    def get_sql_agent_retrieval_chain(db):
+
+        toolkit = SQLDatabaseToolkit(db=db, llm=OpenAI(temperature=0))
+
+        sql_retrieval_chain = create_sql_agent(
+            llm=ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613"),
+            toolkit=toolkit,
+            verbose=True,
+            agent_type=AgentType.OPENAI_FUNCTIONS
+        )
+        return sql_retrieval_chain
+    
+
+    def get_csv_agent_retrieval_chain(db):
+
+        csv_retrieval_chain = create_csv_agent(
+            OpenAI(temperature=0),
+            "titanic.csv",
+            verbose=True,
+            agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        )
 
         return csv_retrieval_chain
     

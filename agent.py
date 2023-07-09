@@ -7,7 +7,7 @@ from langchain.agents import AgentExecutor
 from langchain.memory import ConversationBufferMemory
 from prompt_templates import CustomPromptTemplates
 from agent_tools import Agent_Tools
-#import pandas as pd
+
 
 llm = ChatOpenAI(temperature=0.1, model="gpt-3.5-turbo-0613")
 
@@ -19,16 +19,16 @@ class Agent():
         conversational_agent = initialize_agent(
             tools=Agent_Tools.initTools(),
             llm=llm,
-            #agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+            agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
             #agent=AgentType.OPENAI_FUNCTIONS,
-            agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+            #agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
             verbose=True,
-            max_iterations=3,
+            max_iterations=5,
             prompt=custom_prompt,
             #retriever=vectorstore.as_retriever(),
             handle_parsing_errors=True,
             agent_instructions="Try the 'CSV_Data' or 'Local_Documents' tool first, Use the other tools if relevent and neccessary.",
-            memory=ConversationBufferMemory(memory_key='chat_history', return_messages=True)
+            memory=ConversationBufferMemory(memory_key='chat_history', return_messages=True),
         )
 
         return conversational_agent
