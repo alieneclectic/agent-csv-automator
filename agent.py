@@ -25,9 +25,11 @@ class Agent():
             verbose=True,
             max_iterations=5,
             prompt=custom_prompt,
+            #system_message = "Add agent message",
             #retriever=vectorstore.as_retriever(),
             handle_parsing_errors=True,
-            agent_instructions="Try the 'CSV_Data' or 'Local_Documents' tool first, Use the other tools if relevent and neccessary.",
+            early_stopping_method='generate',
+            agent_instructions="Try the 'CSV_Data' or 'Local_Documents' tool first, Use the other tools if relevent and neccessary. Use the Calculator for any math problems",
             memory=ConversationBufferMemory(memory_key='chat_history', return_messages=True),
         )
 

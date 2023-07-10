@@ -6,6 +6,7 @@ from utils import DocumentStorage, DocumentProcessing
 from custom_tools import Custom_Tools
 from agent import Agent
 import pandas as pd
+from pathlib import Path
 import openai
 
 
@@ -18,18 +19,17 @@ def handle_userinput(user_question):
         # Truncate or summarize the conversation history if it's too long
         if len(st.session_state.chat_history) > 1000:
             st.session_state.chat_history = st.session_state.chat_history[-1000:]
-
+            
         try:
             #call the OpenAI API
             response = st.session_state.conversation({'input': user_question})
+            # Append the response to the existing chat history
+            if 'chat_history' in response:
+                #st.session_state.chat_history.extend(response['chat_history'])
+                st.session_state.chat_history = response['chat_history']
         except openai.error.InvalidRequestError as e:
             # Handle the error
             st.error(f"Error: {str(e)}")
-
-        # Append the response to the existing chat history
-        if 'chat_history' in response:
-            #st.session_state.chat_history.extend(response['chat_history'])
-            st.session_state.chat_history = response['chat_history']
 
         # Reverse the chat history in pairs
         reversed_chat_history = list(reversed([st.session_state.chat_history[i:i+2] for i in range(0, len(st.session_state.chat_history), 2)]))
@@ -99,7 +99,11 @@ def handle_csv_upload():
 
 def main():
     embeddings = OpenAIEmbeddings()
-    vectorstore = FAISS.load_local("faiss_index", embeddings)
+    
+    if Path('faiss_index').exists():
+        vectorstore = FAISS.load_local("faiss_index", embeddings)
+    else:
+        vectorstore = None
 
     #init  local vector storage 
     if not vectorstore:
@@ -109,13 +113,19 @@ def main():
     st.set_page_config(page_title="Craft LLM Automation", page_icon=":stars:")
     #remove the streamlit logo
     st.write(css, unsafe_allow_html=True)
-    hide_streamlit_style = """
+    streamlit_style = """
             <style>
             #MainMenu {visibility: hidden;}
             footer {visibility: hidden;}
+            [data-testid="stSidebar"] {
+                background-image: url(https://www.craftww.com/wp-content/themes/CRAFT/assets/images/craft-logo.svg);
+                background-repeat: no-repeat;
+                background-size: 50%;
+                background-position: 20px 20px;
+            }
             </style>
             """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+    st.markdown(streamlit_style, unsafe_allow_html=True)
 
     if "conversation" not in st.session_state:
         st.session_state.conversation = None

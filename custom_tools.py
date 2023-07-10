@@ -10,11 +10,15 @@ from langchain.llms import OpenAI
 from langchain.chains import RetrievalQA
 from typing import Optional, Type
 from langchain.tools import BaseTool
+from pydantic import BaseModel, Field
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
 from dotenv import load_dotenv
+from langchain import SerpAPIWrapper
+
+search = SerpAPIWrapper()
 load_dotenv()
 
 
@@ -59,10 +63,25 @@ class Custom_Tools():
 
         csv_retrieval_chain = create_csv_agent(
             OpenAI(temperature=0),
-            "titanic.csv",
+            "test.csv",
             verbose=True,
             agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         )
 
         return csv_retrieval_chain
-    
+
+
+class CustomCSVGeneratorTool(BaseTool):
+    name = "CSV_Generator"
+    description = "useful for when you need create a CSV file based on gathered information from the Local_Documents_Chain and the CSV_Data_Chain."
+
+    def _run(
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
+        """Use the tool."""
+        return search.run(query)
+
+    async def _arun(
+        self, query: str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
+    ) -> str:
+        raise NotImplementedError("custom_search does not support async")
