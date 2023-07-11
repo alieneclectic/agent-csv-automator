@@ -7,9 +7,21 @@ from langchain.agents import AgentExecutor
 from langchain.memory import ConversationBufferMemory
 from prompt_templates import CustomPromptTemplates
 from agent_tools import Agent_Tools
+from langchain.prompts import (
+    ChatPromptTemplate,
+    PromptTemplate,
+    SystemMessagePromptTemplate,
+    AIMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+)
+
+# template="You are a helpful assistant that translates {input_language} to {output_language}."
+# system_message_prompt = SystemMessagePromptTemplate.from_template(template)
+# human_template="{text}"
+# human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
 
 
-llm = ChatOpenAI(temperature=0.1, model="gpt-3.5-turbo-0613")
+llm = ChatOpenAI(temperature=0.0, model="gpt-3.5-turbo-0613")
 
 class Agent():
     def initialize_conversational_agent():
@@ -32,6 +44,8 @@ class Agent():
             agent_instructions="Try the 'CSV_Data' or 'Local_Documents' tool first, Use the other tools if relevent and neccessary. Use the Calculator for any math problems",
             memory=ConversationBufferMemory(memory_key='chat_history', return_messages=True),
         )
+
+        #print(conversational_agent)
 
         return conversational_agent
     

@@ -92,7 +92,7 @@ def handle_csv_upload():
                     # Concatenate all data into one DataFrame
                     concat_frame = pd.concat(dfs, ignore_index=True)
                     st.session_state.df = concat_frame
-                    csv_tool = Custom_Tools.get_csv_retrieval_chain(st.session_state.df)
+                    csv_tool = Custom_Tools.get_pandas_dataframe_agent(st.session_state.df)
 
                     
                     
@@ -110,18 +110,21 @@ def main():
         vectorstore = FAISS.from_texts(texts=[""], embedding=embeddings) 
         vectorstore.save_local("faiss_index")
 
-    st.set_page_config(page_title="Craft LLM Automation", page_icon=":stars:")
+    st.set_page_config(page_title="Craft LLM Automation")
     #remove the streamlit logo
     st.write(css, unsafe_allow_html=True)
     streamlit_style = """
             <style>
             #MainMenu {visibility: hidden;}
             footer {visibility: hidden;}
-            [data-testid="stSidebar"] {
-                background-image: url(https://www.craftww.com/wp-content/themes/CRAFT/assets/images/craft-logo.svg);
-                background-repeat: no-repeat;
-                background-size: 50%;
-                background-position: 20px 20px;
+
+            .block-container::before {
+                content: url(https://www.craftww.com/wp-content/themes/CRAFT/assets/images/craft-logo.svg);
+                position: absolute;
+                top: -80px;
+                left: 0px;
+                width: 200px;
+                height: 50px;
             }
             </style>
             """
@@ -138,8 +141,8 @@ def main():
     if "df" not in st.session_state:
         st.session_state.df = pd.DataFrame()
 
-    st.header("Craft LLM POC:")
-    user_question = st.text_input("Ask a question about your documents:")
+    st.header("Document Chat:")
+    user_question = st.text_input("Upload and ask a question about your documents:")
 
     handle_document_upload()
     handle_csv_upload()
