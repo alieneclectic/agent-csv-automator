@@ -41,11 +41,6 @@ class Agent_Tools:
                 description="useful for when you need to answer questions about math. Input should be a valid numerical expression"
             ),
             Tool(
-                name = "CSV_Generator",
-                func=Custom_Tools.generate_csv_file,
-                description="useful for when you need create a CSV file based on gathered information from the Local_Documents_Chain and the CSV_Data_Chain"
-            ),
-            Tool(
                 name="Local_Documents_Chain",
                 func=Custom_Tools.get_document_retrieval_qa_chain().run,
                 description="useful for when you need to answer questions about local documents, documents stored in vector storage, or uploaded documents. Input should be a fully formed question.",
@@ -61,6 +56,12 @@ class Agent_Tools:
                 name="Zapier_Agent",
                 func=Custom_Tools.get_zapier_agent().run,
                 description="useful for when you need to interact with the Zapier API and NLA API requests.",
+                return_direct=True
+            ),
+            Tool(
+                name = "CSV_Generator",
+                func=Custom_Tools.generate_csv_data,
+                description="useful for when you need create a CSV file based on gathered information from the Local_Documents_Chain and the CSV_Data_Chain",
                 return_direct=True
             ),
             # Tool(

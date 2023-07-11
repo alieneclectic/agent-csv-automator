@@ -3,6 +3,7 @@ from langchain.vectorstores import FAISS
 from langchain.embeddings import OpenAIEmbeddings, HuggingFaceInstructEmbeddings
 from langchain.agents import AgentType, create_pandas_dataframe_agent, create_sql_agent, create_csv_agent
 from langchain.agents.agent_toolkits import SQLDatabaseToolkit
+from langchain.memory import ConversationBufferMemory
 from langchain.utilities.zapier import ZapierNLAWrapper
 from langchain.agents.agent_toolkits import ZapierToolkit
 from langchain.agents import initialize_agent
@@ -14,6 +15,7 @@ from langchain.chains import RetrievalQA
 from typing import Optional, Type
 from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
+from langchain import PromptTemplate, LLMChain
 import pandas as pd
 from pathlib import Path
 from langchain.callbacks.manager import (
@@ -27,7 +29,8 @@ search = SerpAPIWrapper()
 load_dotenv()
 
 
-llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613")
+llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo")
+llm2 = OpenAI(temperature=0, model="gpt-3.5-turbo")
 
 class Custom_Tools():
 
@@ -88,10 +91,29 @@ class Custom_Tools():
         return zapier_agent
     
     
-    def generate_csv_file(file_name):
-        filepath = Path('output/' + file_name)  
-        # df.to_csv(filepath)
-        return file_name + ' was created.'
+    def generate_csv_data(query):
+
+        #filepath = Path('output/' + file_name)
+
+        document_chain = Custom_Tools.get_document_retrieval_qa_chain()
+        csv_chain = Custom_Tools.get_pandas_dataframe_agent(st.session_state.df)
+
+        document_data = document_chain.run('Using all the content from the uploaded documents, return all the text in a human redable format. Only return the test and nothing else.')
+        csv_data = st.session_state.df.to_csv()
+
+        template = """
+        Use the following CSV data: {csv_data} and the following text data to generate new, CSV data: {document_data} The data generated should be informed by the text data and must exactly match the structure of the original CSV data. Follow any additional guidance from the following query: {query}
+        """
+        prompt = PromptTemplate(template=template, input_variables=["csv_data", "document_data", "query"])
+
+        llm_chain = LLMChain(
+            llm=llm,
+            prompt=prompt
+        )
+
+        response = llm_chain.predict(csv_data=csv_data, document_data=document_data, query=query)
+
+        return response
     
 
 
