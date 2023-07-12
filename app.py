@@ -17,8 +17,8 @@ def handle_userinput(user_question):
         st.session_state.conversation = agent
 
         # Truncate or summarize the conversation history if it's too long
-        if len(st.session_state.chat_history) > 1000:
-            st.session_state.chat_history = st.session_state.chat_history[-1000:]
+        if len(st.session_state.chat_history) > 4000:
+            st.session_state.chat_history = st.session_state.chat_history[-4000:]
             
         try:
             #call the OpenAI API

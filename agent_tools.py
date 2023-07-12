@@ -4,11 +4,19 @@ from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
 from langchain import LLMMathChain, SerpAPIWrapper
 from langchain.agents import load_tools
-from langchain.agents.agent_toolkits import FileManagementToolkit
+from langchain.agents.agent_toolkits import FileManagementToolkit, PlayWrightBrowserToolkit
 from tempfile import TemporaryDirectory
 from custom_tools import Custom_Tools
 from dotenv import load_dotenv
 import pandas as pd
+from langchain.tools.playwright.utils import (
+    create_async_playwright_browser,
+    create_sync_playwright_browser,
+)
+
+# async_browser = create_sync_playwright_browser()
+# browser_toolkit = PlayWrightBrowserToolkit.from_browser(async_browser=async_browser).get_tools()
+# click_element, navigate_browser, previous_webpage, extract_text, get_elements, current_webpage = browser_toolkit
 
 working_directory = TemporaryDirectory()
 file_toolkit = FileManagementToolkit(
@@ -35,6 +43,12 @@ class Agent_Tools:
             read_tool,
             write_tool,
             list_tool,
+            # click_element,
+            # navigate_browser,
+            # previous_webpage,
+            # extract_text,
+            # get_elements,
+            # current_webpage,
             Tool(
                 name="Calculator",
                 func=llm_math_chain.run,
@@ -74,11 +88,11 @@ class Agent_Tools:
             #     func=Custom_Tools.get_csv_agent_retrieval_chain,
             #     description="useful for when you need to answer questions about CSV data, or an uploaded CSV using an robust LLM agent. Input should be a fully formed question."
             # ),
-            # Tool(
-            #     name = "Search",
-            #     func=search.run,
-            #     description="useful for when you need to answer questions about current events. You should ask targeted questions"
-            # )
+            Tool(
+                name = "Search",
+                func=search.run,
+                description="useful for when you need to answer questions about current events. You should ask targeted questions"
+            )
         ]
 
         return tools

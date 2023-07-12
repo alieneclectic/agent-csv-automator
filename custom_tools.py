@@ -97,11 +97,12 @@ class Custom_Tools():
         document_chain = Custom_Tools.get_document_retrieval_qa_chain()
         #csv_chain = Custom_Tools.get_pandas_dataframe_agent(st.session_state.df)
 
+        # prepare local document text
         document_data = document_chain.run('Using all the content from the uploaded documents, return all text in a human redable format. Only return the text and nothing else.')
         csv_data = st.session_state.df.to_csv(index=False)
 
         template = """
-        Use the following CSV data example: {csv_data} and text data as a reference: {document_data}. Generate new CSV data informed by the text data that exactly matches the shape and structure of the CSV data example. Follow any additional guidance from the following query: {query}. The output must be In CSV format.
+        Use the following CSV data example: {csv_data} and text data as a reference: {document_data} for context. Generate new CSV data informed by the text data. The CSV data should exactly match the shape of the CSV data example. Follow any additional guidance from the following query: {query}. The output must be in CSV format. 
         """
         prompt = PromptTemplate(template=template, input_variables=["csv_data", "document_data", "query"])
 
@@ -110,12 +111,17 @@ class Custom_Tools():
             prompt=prompt
         )
 
+        # create local file
         filepath = Path('output/feed.csv')
-
-        response = llm_chain.predict(csv_data=csv_data, document_data=document_data, query=query)
-
+        response = llm_chain.run(csv_data=csv_data, document_data=document_data, query=query)
         new_df = pd.read_csv(io.StringIO(response), sep=",")
+        new_df.to_csv(filepath, index=False)
 
-        new_df.to_csv(filepath)
+        # send to Google Sheets with Zapier
+        # zapier = Custom_Tools.get_zapier_agent()
+        # zapier_template = """
+        # create a new google sheets using the following csv data {new_df}
+        # """
+        # zapier.run(zapier_template)
 
         return response
