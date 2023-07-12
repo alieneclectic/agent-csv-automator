@@ -21,7 +21,7 @@ from langchain.prompts import (
 # human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
 
 
-llm = ChatOpenAI(temperature=0.0, model="gpt-3.5-turbo-0613")
+llm = ChatOpenAI(temperature=0.0, model="gpt-3.5-turbo")
 
 class Agent():
     def initialize_conversational_agent():
@@ -52,7 +52,7 @@ class Agent():
     def initialize_dataframe_agent(df):
 
         dataframe_agent = create_pandas_dataframe_agent(
-            ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613"),
+            llm,
             df,
             verbose=True,
             agent_type=AgentType.OPENAI_FUNCTIONS,
@@ -66,7 +66,7 @@ class Agent():
         toolkit = SQLDatabaseToolkit(db=db, llm=OpenAI(temperature=0))
 
         sql_agent = create_sql_agent(
-            llm=ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613"),
+            llm=llm,
             toolkit=toolkit,
             verbose=True,
             agent_type=AgentType.OPENAI_FUNCTIONS

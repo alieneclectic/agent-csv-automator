@@ -17,6 +17,7 @@ from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
 from langchain import PromptTemplate, LLMChain
 import pandas as pd
+import io
 from pathlib import Path
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -60,7 +61,7 @@ class Custom_Tools():
         toolkit = SQLDatabaseToolkit(db=db, llm=OpenAI(temperature=0))
 
         sql_retrieval_chain = create_sql_agent(
-            llm=ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613"),
+            llm=llm,
             toolkit=toolkit,
             verbose=True,
             agent_type=AgentType.OPENAI_FUNCTIONS
@@ -93,16 +94,14 @@ class Custom_Tools():
     
     def generate_csv_data(query):
 
-        #filepath = Path('output/' + file_name)
-
         document_chain = Custom_Tools.get_document_retrieval_qa_chain()
-        csv_chain = Custom_Tools.get_pandas_dataframe_agent(st.session_state.df)
+        #csv_chain = Custom_Tools.get_pandas_dataframe_agent(st.session_state.df)
 
-        document_data = document_chain.run('Using all the content from the uploaded documents, return all the text in a human redable format. Only return the test and nothing else.')
-        csv_data = st.session_state.df.to_csv()
+        document_data = document_chain.run('Using all the content from the uploaded documents, return all text in a human redable format. Only return the text and nothing else.')
+        csv_data = st.session_state.df.to_csv(index=False)
 
         template = """
-        Use the following CSV data: {csv_data} and the following text data to generate new, CSV data: {document_data} The data generated should be informed by the text data and must exactly match the structure of the original CSV data. Follow any additional guidance from the following query: {query}
+        Use the following CSV data example: {csv_data} and text data as a reference: {document_data}. Generate new CSV data informed by the text data that exactly matches the shape and structure of the CSV data example. Follow any additional guidance from the following query: {query}. The output must be In CSV format.
         """
         prompt = PromptTemplate(template=template, input_variables=["csv_data", "document_data", "query"])
 
@@ -111,24 +110,12 @@ class Custom_Tools():
             prompt=prompt
         )
 
+        filepath = Path('output/feed.csv')
+
         response = llm_chain.predict(csv_data=csv_data, document_data=document_data, query=query)
 
+        new_df = pd.read_csv(io.StringIO(response), sep=",")
+
+        new_df.to_csv(filepath)
+
         return response
-    
-
-
-# class CustomCSVGeneratorTool(BaseTool):
-#     name = "CSV_Generator"
-#     description = "useful for when you need create a CSV file based on gathered information from the Local_Documents_Chain and the CSV_Data_Chain."
-
-#     def _run(
-#         self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
-#     ) -> str:
-#         """Use the tool."""
-#         response = "CSV Generated"
-#         return response
-
-#     async def _arun(
-#         self, query: str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
-#     ) -> str:
-#         raise NotImplementedError("custom_search does not support async")

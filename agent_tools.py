@@ -18,7 +18,7 @@ file_toolkit = FileManagementToolkit(
 read_tool, write_tool, list_tool = file_toolkit
 load_dotenv()
 
-llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613")
+llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo")
 
 search = SerpAPIWrapper()
 llm_math_chain = LLMMathChain.from_llm(llm=llm, verbose=True)
@@ -61,7 +61,7 @@ class Agent_Tools:
             Tool(
                 name = "CSV_Generator",
                 func=Custom_Tools.generate_csv_data,
-                description="useful for when you need create a CSV file based on gathered information from the Local_Documents_Chain and the CSV_Data_Chain",
+                description="useful for when you need create or generate CSV data, especially based data from the Local_Documents_Chain and the CSV_Data_Chain",
                 return_direct=True
             ),
             # Tool(

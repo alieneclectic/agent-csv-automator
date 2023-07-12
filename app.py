@@ -93,9 +93,8 @@ def handle_csv_upload():
                     concat_frame = pd.concat(dfs, ignore_index=True)
                     st.session_state.df = concat_frame
                     csv_tool = Custom_Tools.get_pandas_dataframe_agent(st.session_state.df)
+                    #print(st.session_state.df.to_csv(index=False))
 
-                    
-                    
 
 def main():
     embeddings = OpenAIEmbeddings()
