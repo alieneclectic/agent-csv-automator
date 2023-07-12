@@ -66,12 +66,12 @@ class Agent_Tools:
                 description="useful for when you need to answer questions about CSV documents that were uploaded or manipulate a CSVs data stored in a dataframe. This tool leverages the Pandas framwork. Input should be a fully formed question.",
                 return_direct=True
             ),
-            Tool(
-                name="Zapier_Agent",
-                func=Custom_Tools.get_zapier_agent().run,
-                description="useful for when you need to interact with the Zapier API and NLA API requests.",
-                return_direct=True
-            ),
+            # Tool(
+            #     name="Zapier_Agent",
+            #     func=Custom_Tools.get_zapier_agent().run,
+            #     description="useful for when you need to interact with the Zapier API and NLA API requests.",
+            #     return_direct=True
+            # ),
             Tool(
                 name = "CSV_Generator",
                 func=Custom_Tools.generate_csv_data,

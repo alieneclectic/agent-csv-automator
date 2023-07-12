@@ -16,6 +16,7 @@ from typing import Optional, Type
 from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
 from langchain import PromptTemplate, LLMChain
+from datetime import datetime
 import pandas as pd
 import io
 from pathlib import Path
@@ -23,6 +24,8 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+
+import gspread
 from dotenv import load_dotenv
 from langchain import SerpAPIWrapper
 
@@ -31,7 +34,7 @@ load_dotenv()
 
 
 llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo")
-llm2 = OpenAI(temperature=0, model="gpt-3.5-turbo")
+#llm2 = OpenAI(temperature=0, model="gpt-3.5-turbo")
 
 class Custom_Tools():
 
@@ -98,17 +101,18 @@ class Custom_Tools():
         #csv_chain = Custom_Tools.get_pandas_dataframe_agent(st.session_state.df)
 
         # prepare local document text
-        document_data = document_chain.run('Using all the content from the uploaded documents, return all text in a human redable format. Only return the text and nothing else.')
+        document_data = document_chain.run('Using all the content from the uploaded documents. Only return the text and nothing else.')
         csv_data = st.session_state.df.to_csv(index=False)
 
         template = """
-        Use the following CSV data example: {csv_data} and text data as a reference: {document_data} for context. Generate new CSV data informed by the text data. The CSV data should exactly match the shape of the CSV data example. Follow any additional guidance from the following query: {query}. The output must be in CSV format. 
+        Use the following CSV data: {csv_data} and text data examples as a reference: {document_data} for context. Generate new CSV data informed by the text data example. The CSV data should exactly match the columns names of the CSV data example. Follow any additional guidance from the following query: {query}. The output must be in CSV format. 
         """
         prompt = PromptTemplate(template=template, input_variables=["csv_data", "document_data", "query"])
 
         llm_chain = LLMChain(
             llm=llm,
-            prompt=prompt
+            prompt=prompt,
+            verbose = True
         )
 
         # create local file
@@ -117,11 +121,33 @@ class Custom_Tools():
         new_df = pd.read_csv(io.StringIO(response), sep=",")
         new_df.to_csv(filepath, index=False)
 
+
+        #send to Google Sheets with gspread
+        now = datetime.now()
+        ct = now.strftime("%m/%d/%Y, %H:%M:%S")
+        filepath = Path('service_account.json')
+        gc = gspread.oauth(credentials_filename=filepath)
+        sh = gc.open("DCO AI Generated")
+        worksheet = sh.add_worksheet(title="DCO Feed-" + ct, rows=52, cols=10)
+        sheet_df = pd.read_csv(Path('output/feed.csv'))
+        worksheet.update([sheet_df.columns.values.tolist()] + sheet_df.values.tolist())
+        #print(sh.sheet1.get('A1'))
+
+        
+
+
         # send to Google Sheets with Zapier
         # zapier = Custom_Tools.get_zapier_agent()
         # zapier_template = """
         # create a new google sheets using the following csv data {new_df}
         # """
         # zapier.run(zapier_template)
+
+        #Example prompts
+        # Summarize the uploaded [doc_name] document
+        # Generate a new row of csv data for each state on the west coast of the USA. The Headline column should include include the state name
+        # Generate a new row of csv data for each state in the mid west of the USA. The Headline column should include include the state name
+        # Generate a new row of csv data for each state in the East Coast of the USA. The Headline column should include include the state name
+        # Generate a new row of csv data for each county in the the state of New Jersey and make the Headline column include the county name
 
         return response
