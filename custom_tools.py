@@ -145,8 +145,8 @@ class Custom_Tools():
 
         #Example prompts
         # Summarize the uploaded [doc_name] document
-        # Generate a new row of csv data for each state on the west coast of the USA. The Headline column should include include the state name
-        # Generate a new row of csv data for each state in the mid west of the USA. The Headline column should include include the state name
+        # Generate a new row of csv data for each state on the West coast of the USA. The Headline column should include include the state name
+        # Generate a new row of csv data for each state in Middle America of the USA. The Headline column should include include the state name
         # Generate a new row of csv data for each state in the East Coast of the USA. The Headline column should include include the state name
         # Generate a new row of csv data for each county in the the state of New Jersey and make the Headline column include the county name
 
