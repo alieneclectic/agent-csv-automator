@@ -9,6 +9,7 @@ from PyPDF2 import PdfReader
 from dotenv import load_dotenv
 from docx import Document
 import pandas as pd
+from pathlib import Path
 
 load_dotenv()
 
@@ -25,8 +26,17 @@ class DocumentStorage():
 
         return vectorstore
     
-    def set_llama_index(documents):
-        index = VectorStoreIndex.from_documents(documents=documents)
+    def set_llama_index():
+        documents = SimpleDirectoryReader('docs').load_data()
+        index = VectorStoreIndex.from_documents(documents)
+
+        # # save index to disk
+        # index.set_index_id("vector_index")
+        # index.storage_context.persist("./storage")
+        # # rebuild storage context
+        # storage_context = StorageContext.from_defaults(persist_dir="storage")
+        # # load index
+        # index = load_index_from_storage(storage_context, index_id="vector_index")
         return index
         
     

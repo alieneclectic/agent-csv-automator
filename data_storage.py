@@ -11,6 +11,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
 documents = SimpleDirectoryReader("/Users/jason.english/Desktop/verizon-poc/pdfs").load_data()
+print(documents)
 index = VectorStoreIndex.from_documents(documents=documents)
 
 tools = [
@@ -28,4 +29,6 @@ agent_executor = initialize_agent(
     tools, llm, agent="conversational-react-description", memory=memory
 )
 
-agent_executor.run("generate verizon product headlines for each state using the local documents as guidance. The headline should include something about the state or the state name itslef. The output format should be in CSV. The column name for the headline should be 'Headline'")
+# agent_executor.run("generate verizon product headlines for each state using the local documents as guidance. The headline should include something about the state or the state name itslef. The output format should be in CSV. The column name for the headline should be 'Headline'")
+
+agent_executor.run("summarize the uploaded documents")

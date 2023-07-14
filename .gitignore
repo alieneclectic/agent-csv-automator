@@ -130,6 +130,7 @@ venv.bak/
 faiss_index/
 output/*
 service_account.json
+docs/*
 
 # Spyder project settings
 .spyderproject
