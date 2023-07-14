@@ -11,6 +11,8 @@ google-auth==2.22.0
 google-auth-httplib2==0.1.0
 google-auth-oauthlib==1.0.0
 googleapis-common-protos==1.59.1
+llama-index==0.7.8
+gspread==5.7.1
 
 # uncomment to use huggingface llms
 # huggingface-hub==0.14.1

@@ -4,6 +4,7 @@ from langchain.embeddings import OpenAIEmbeddings, HuggingFaceInstructEmbeddings
 #from langchain.llms import HuggingFaceHub
 from langchain.vectorstores import FAISS
 from langchain.text_splitter import CharacterTextSplitter
+from llama_index import VectorStoreIndex, SimpleDirectoryReader
 from PyPDF2 import PdfReader
 from dotenv import load_dotenv
 from docx import Document
@@ -23,6 +24,11 @@ class DocumentStorage():
         vectorstore.save_local("faiss_index")
 
         return vectorstore
+    
+    def set_llama_index(documents):
+        index = VectorStoreIndex.from_documents(documents=documents)
+        return index
+        
     
 
 class DocumentProcessing():
@@ -48,7 +54,6 @@ class DocumentProcessing():
                 text += page.extract_text()
         return text
 
-
     def get_docx_file_content(docx_docs):
         text = ""
         for docx in docx_docs:
@@ -56,7 +61,6 @@ class DocumentProcessing():
             for para in doc.paragraphs:
                 text += para.text
         return text
-
 
     def get_text_chunks(text ,chunk_size, chunk_overlap):
         text_splitter = CharacterTextSplitter(

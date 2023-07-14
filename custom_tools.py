@@ -25,6 +25,8 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
 )
 
+#import camelot #extract tables from PDFs
+
 import gspread
 from dotenv import load_dotenv
 from langchain import SerpAPIWrapper
@@ -34,7 +36,6 @@ load_dotenv()
 
 
 llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo")
-#llm2 = OpenAI(temperature=0, model="gpt-3.5-turbo")
 
 class Custom_Tools():
 
@@ -121,6 +122,9 @@ class Custom_Tools():
         new_df = pd.read_csv(io.StringIO(response), sep=",")
         new_df.to_csv(filepath, index=False)
 
+        return response
+    
+    def send_to_google_sheets():
 
         #send to Google Sheets with gspread
         now = datetime.now()
@@ -128,26 +132,21 @@ class Custom_Tools():
         filepath = Path('service_account.json')
         gc = gspread.oauth(credentials_filename=filepath)
         sh = gc.open("DCO AI Generated")
-        worksheet = sh.add_worksheet(title="DCO Feed-" + ct, rows=52, cols=10)
+        worksheet = sh.add_worksheet(title="DCO Feed-" + ct, rows=10, cols=10)
         sheet_df = pd.read_csv(Path('output/feed.csv'))
-        worksheet.update([sheet_df.columns.values.tolist()] + sheet_df.values.tolist())
-        #print(sh.sheet1.get('A1'))
+        if(sheet_df):
+            worksheet.update([sheet_df.columns.values.tolist()] + sheet_df.values.tolist())
+        else:
+            return "No csv data found."
 
-        
+    
+    def llama_index():
+        return True
+    
 
-
-        # send to Google Sheets with Zapier
-        # zapier = Custom_Tools.get_zapier_agent()
-        # zapier_template = """
-        # create a new google sheets using the following csv data {new_df}
-        # """
-        # zapier.run(zapier_template)
-
-        #Example prompts
-        # Summarize the uploaded [doc_name] document
-        # Generate a new row of csv data for each state on the West coast of the USA. The Headline column should include include the state name
-        # Generate a new row of csv data for each state in Middle America of the USA. The Headline column should include include the state name
-        # Generate a new row of csv data for each state in the East Coast of the USA. The Headline column should include include the state name
-        # Generate a new row of csv data for each county in the the state of New Jersey and make the Headline column include the county name
-
-        return response
+#Example prompts
+# Summarize the uploaded [doc_name] document
+# Generate a new row of csv data for each state on the West coast of the USA. The Headline column should include include the state name
+# Generate a new row of csv data for each state in Middle America of the USA. The Headline column should include include the state name
+# Generate a new row of csv data for each state in the East Coast of the USA. The Headline column should include include the state name
+# Generate a new row of csv data for each county in the the state of New Jersey and make the Headline column include the county name
