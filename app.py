@@ -5,18 +5,18 @@ from htmlTemplates import css, bot_template, user_template
 from utils import DocumentStorage, DocumentProcessing
 from custom_tools import Custom_Tools
 from agent import Agent
-import pandas as pd
 from pathlib import Path
+import numpy as np
+import pandas as pd
 import openai
 import os
 
 
-  
-
-
 def handle_userinput(user_question):
     if user_question:
-
+        #print(st.session_state.conversation)
+        #if(st.session_state.conversation == None):
+        #agent = Agent.initialize_llama_index_agent()
         agent = Agent.initialize_conversational_agent()
         st.session_state.conversation = agent
 
@@ -48,51 +48,65 @@ def handle_userinput(user_question):
                     "{{MSG}}", message.content), unsafe_allow_html=True)
 
 
-#function to save a file
-def save_uploaded_docs(uploadedfile):
+def handle_user_qa_input(user_qa_question):
+    
+    response = st.session_state.qa_conversation({'input': user_qa_question})
+    st.write(response)
+
+
+def list_all_docs():
+    dir = "docs"
+    return os.listdir(dir)
+
+
+def write_bullets(data):
+    bullet_list = "\n".join(f"- {item}" for item in data)
+    st.write(bullet_list)
+
+
+def delete_all_docs(dir):
+    for f in os.listdir(dir):
+        os.remove(os.path.join(dir, f))
+
+
+def send_docs_to_qa(uploadedfile):
+     delete_all_docs("qa")
+     for doc in uploadedfile:
+        with open(os.path.join("qa",doc.name),"wb") as f:
+         f.write(doc.getbuffer())
+
+
+def send_docs_to_index(uploadedfile):
+     delete_all_docs("docs")
      for doc in uploadedfile:
         with open(os.path.join("docs",doc.name),"wb") as f:
          f.write(doc.getbuffer())
-
-    #  docs_dir = Path("docs")
-    #  file_paths = list(docs_dir.glob('*'))
      st.session_state.llama_index = DocumentStorage.set_llama_index()
+
 
 def handle_document_upload():
     with st.sidebar:
         st.subheader("Documents")
+        # st.write("Uploaded documents:")
+        # filelist = list_all_docs()
+        # write_bullets(filelist)
         uploaded_docs = st.file_uploader(
-            "Upload your documents here and click on 'Upload'", type=['pdf', 'docx', 'txt'], accept_multiple_files=True)
+            "Upload documents here", type=['pdf', 'docx', 'txt'], accept_multiple_files=True)
         if uploaded_docs:
             st.session_state.uploaded_docs = uploaded_docs
             with st.spinner("Processing"):
-                input_file = save_uploaded_docs(uploaded_docs)
-                #st.session_state.llama_index = DocumentStorage.set_llama_index(uploaded_docs)
-                # raw_text = ""
-                # for doc in st.session_state.uploaded_docs:
-                #     if doc.type == "application/pdf":
-                #         raw_text += DocumentProcessing.get_pdf_file_content([doc])
-                #     elif doc.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-                #         raw_text += DocumentProcessing.get_docx_file_content([doc])
-                #     elif doc.type == "text/plain":
-                #         raw_text += DocumentProcessing.get_text_file_content([doc])
-                #     elif doc.type == "text/csv":
-                #         raw_text += DocumentProcessing.get_csv_file_content([doc])
-                        
-                # text_chunks = DocumentProcessing.get_text_chunks(raw_text, chunk_size=1000, chunk_overlap=100)
-                # #create vector store
-                # vectorstore = DocumentStorage.set_document_vectorstore(text_chunks, doc.type, doc.name)
+                index = send_docs_to_index(uploaded_docs)
+                
+
                     
                           
-                    
 def handle_csv_upload():
     with st.sidebar:
         st.subheader("CSVs")
         uploaded_csv = st.file_uploader(
-            "Upload your CSVs here and click on 'Upload'", type=['csv'], accept_multiple_files=True)
+            "Upload CSVs here", type=['csv'], accept_multiple_files=True)
         if uploaded_csv:
             st.session_state.uploaded_csv = uploaded_csv
-        if st.button("Upload & CSV", key="button2"):
             with st.spinner("Processing"):
                 dfs = []
                 for csv in st.session_state.uploaded_csv:
@@ -102,19 +116,54 @@ def handle_csv_upload():
                 concat_frame = pd.concat(dfs, ignore_index=True)
                 st.session_state.df = concat_frame
                 csv_tool = Custom_Tools.get_pandas_dataframe_agent(st.session_state.df)
-                #print(st.session_state.df.to_csv(index=False))
+
 
 def page_tabs():
-    tab1, tab2, tab3 = st.tabs(["Data Chat", "Data Visualization", "Data QA"])
+    tab1, tab2, tab3 = st.tabs(["Data Chat", "Data QA", "Data Visualization",])
+
     with tab1:
         st.header("Data Chat")
         user_question = st.text_input("Upload and ask a question about your documents:")
+
+        index_type = st.checkbox("Semantic Search", value=st.session_state.index_type)
+
+        if index_type != st.session_state.index_type:
+            st.session_state.index_type = index_type
+            if index_type:
+                st.session_state.query_type = "vector_index"
+            else:
+                st.session_state.query_type = "list_index"
+            
+
         if user_question:
             handle_userinput(user_question)
+
     with tab2:
-        st.header("Data Visualization")
-    with tab3:
         st.header("Data QA")
+        uploaded_qa_docs = st.file_uploader(
+            "Upload documents here", type=['csv'], accept_multiple_files=True)
+        if uploaded_qa_docs:
+            st.session_state.uploaded_qa_docs = uploaded_qa_docs
+            with st.spinner("Processing"):
+                dfs = []
+                for csv in st.session_state.uploaded_qa_docs:
+                    dfs.append(pd.read_csv(csv))
+
+                # Concatenate all data into one DataFrame
+                concat_frame = pd.concat(dfs, ignore_index=True)
+                st.session_state.df_qa = concat_frame
+                csv_qa_tool = Custom_Tools.get_pandas_dataframe_agent(st.session_state.df_qa)
+                st.session_state.qa_conversation = csv_qa_tool
+
+        user_qa_question = st.text_input("Data QA questions")
+        if user_qa_question:
+            handle_user_qa_input(user_qa_question)
+
+    with tab3:
+        st.header("Data Visualization")
+        # chart_data = pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]})
+        
+        # st.area_chart(chart_data)
 
     
 def main():
@@ -153,16 +202,30 @@ def main():
 
     if "conversation" not in st.session_state:
         st.session_state.conversation = None
+    if "qa_conversation" not in st.session_state:
+        st.session_state.qa_conversation = None
+    if 'index_type' not in st.session_state:
+        st.session_state.index_type = False
+    if "query_type" not in st.session_state:
+        st.session_state.query_type = "list_index"
+    if "vector_index" not in st.session_state:
+        st.session_state.vector_index = None
+    if "list_index" not in st.session_state:
+        st.session_state.list_index = None    
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
     if "uploaded_docs" not in st.session_state:
         st.session_state.uploaded_docs = None
+    if "uploaded_qa_docs" not in st.session_state:
+        st.session_state.uploaded_qa_docs = None
     if "uploaded_csv" not in st.session_state:
         st.session_state.uploaded_csv = None
     if "llama_index" not in st.session_state:
         st.session_state.llama_index = None
     if "df" not in st.session_state:
         st.session_state.df = pd.DataFrame()
+    if "df_qa" not in st.session_state:
+        st.session_state.df_qa = pd.DataFrame()
 
     handle_document_upload()
     handle_csv_upload()

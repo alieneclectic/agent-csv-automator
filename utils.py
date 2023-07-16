@@ -1,17 +1,35 @@
+import streamlit as st
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
 from langchain.embeddings import OpenAIEmbeddings, HuggingFaceInstructEmbeddings
 #from langchain.llms import HuggingFaceHub
 from langchain.vectorstores import FAISS
 from langchain.text_splitter import CharacterTextSplitter
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.node_parser import SimpleNodeParser
 from PyPDF2 import PdfReader
 from dotenv import load_dotenv
 from docx import Document
+from llama_index import (
+    VectorStoreIndex,
+    ServiceContext, 
+    SimpleDirectoryReader, 
+    LangchainEmbedding, 
+    ListIndex,
+    download_loader
+)
+from llama_index.llms import CustomLLM, CompletionResponse, LLMMetadata
+from typing import Optional, List, Mapping, Any
 import pandas as pd
 from pathlib import Path
-
+import openai
+import os
 load_dotenv()
+openai.api_key = os.environ["OPENAI_API_KEY"]
+
+
+PandasCSVReader = download_loader("PandasCSVReader")
+loader = PandasCSVReader()
+
 
 llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo")
 embeddings = OpenAIEmbeddings()
@@ -28,7 +46,8 @@ class DocumentStorage():
     
     def set_llama_index():
         documents = SimpleDirectoryReader('docs').load_data()
-        index = VectorStoreIndex.from_documents(documents)
+        vector_index = VectorStoreIndex.from_documents(documents)
+        list_index = ListIndex.from_documents(documents)
 
         # # save index to disk
         # index.set_index_id("vector_index")
@@ -37,7 +56,17 @@ class DocumentStorage():
         # storage_context = StorageContext.from_defaults(persist_dir="storage")
         # # load index
         # index = load_index_from_storage(storage_context, index_id="vector_index")
-        return index
+        st.session_state.vector_index = vector_index
+        st.session_state.list_index = list_index
+        return {
+            'vector_index': vector_index,
+            'list_index': list_index
+        }
+    
+    def set_pandas_store(df):
+        documents = loader.load_data(df)
+        return documents
+
         
     
 

@@ -1,20 +1,14 @@
 import streamlit as st
 from langchain.vectorstores import FAISS
 from langchain.embeddings import OpenAIEmbeddings, HuggingFaceInstructEmbeddings
-from langchain.agents import AgentType, create_pandas_dataframe_agent, create_sql_agent, create_csv_agent
-from langchain.agents.agent_toolkits import SQLDatabaseToolkit
+from langchain.agents import AgentType, Tool, AgentExecutor, create_pandas_dataframe_agent, create_sql_agent, create_csv_agent, initialize_agent
+from langchain.agents.agent_toolkits import SQLDatabaseToolkit, ZapierToolkit
 from langchain.memory import ConversationBufferMemory
 from langchain.utilities.zapier import ZapierNLAWrapper
-from langchain.agents.agent_toolkits import ZapierToolkit
-from langchain.agents import initialize_agent
 from langchain.sql_database import SQLDatabase
-from langchain.agents import AgentExecutor
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
 from langchain.chains import RetrievalQA
-from typing import Optional, Type
-from langchain.tools import BaseTool
-from pydantic import BaseModel, Field
 from langchain import PromptTemplate, LLMChain
 from datetime import datetime
 import pandas as pd
@@ -24,9 +18,6 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-
-#import camelot #extract tables from PDFs
-
 import gspread
 from dotenv import load_dotenv
 from langchain import SerpAPIWrapper
@@ -60,6 +51,26 @@ class Custom_Tools():
         return csv_retrieval_chain
     
 
+    def get_llama_index_agent():
+        index = st.session_state.llama_index
+        tools = [
+            Tool(
+                    name="LlamaIndex",
+                    func=lambda q: str(index.as_query_engine().query(q)),
+                    description="useful for when you want to answer questions about local documents. The input to this tool should be a complete english sentence.",
+                    return_direct=True,
+                ),
+        ]
+        # set Logging to DEBUG for more detailed outputs
+        memory = ConversationBufferMemory(memory_key="chat_history")
+        llm = ChatOpenAI(temperature=0)
+        llama_agent = initialize_agent(
+            tools, llm, agent="conversational-react-description", memory=memory
+        )
+
+        return llama_agent
+
+
     def get_sql_agent(db):
 
         toolkit = SQLDatabaseToolkit(db=db, llm=OpenAI(temperature=0))
@@ -73,11 +84,11 @@ class Custom_Tools():
         return sql_retrieval_chain
     
 
-    def get_csv_agent(db):
+    def get_csv_agent(file):
 
         csv_retrieval_chain = create_csv_agent(
             OpenAI(temperature=0),
-            "test.csv",
+            file,
             verbose=True,
             agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION
         )
@@ -94,6 +105,22 @@ class Custom_Tools():
         )
 
         return zapier_agent
+    
+
+    def get_sql_index_tool(sql_index, table_context_dict):
+        table_context_str = "\n".join(table_context_dict.values())
+
+        def run_sql_index_query(query_text):
+            try:
+                response = sql_index.as_query_engine(synthesize_response=False).query(query_text)
+            except Exception as e:
+                return f"Error running SQL {e}.\nNot able to retrieve answer."
+            text = str(response)
+            sql = response.extra_info["sql_query"]
+            return f"Here are the details on the SQL table: {table_context_str}\nSQL Query Used: {sql}\nSQL Result: {text}\n"
+            # return f"SQL Query Used: {sql}\nSQL Result: {text}\n"
+
+        return run_sql_index_query 
     
     
     def generate_csv_data(query):
@@ -124,24 +151,39 @@ class Custom_Tools():
 
         return response
     
-    def send_to_google_sheets():
 
-        #send to Google Sheets with gspread
+    def send_to_google_sheets(query):
+
+        #create a new tab and send to Google Sheets
         now = datetime.now()
+        title = title="DCO Feed-"
         ct = now.strftime("%m/%d/%Y, %H:%M:%S")
         filepath = Path('service_account.json')
         gc = gspread.oauth(credentials_filename=filepath)
         sh = gc.open("DCO AI Generated")
-        worksheet = sh.add_worksheet(title="DCO Feed-" + ct, rows=10, cols=10)
+        worksheet = sh.add_worksheet(title=title + ct, rows=10, cols=10)
         sheet_df = pd.read_csv(Path('output/feed.csv'))
-        if(sheet_df):
+        if not sheet_df.empty:
             worksheet.update([sheet_df.columns.values.tolist()] + sheet_df.values.tolist())
+            return "A new sheet called" + title + ct + "has been generated and sent to Google Sheets successfuly."
         else:
             return "No csv data found."
 
     
-    def llama_index():
-        return True
+    def get_sql_index_tool(sql_index, table_context_dict):
+        table_context_str = "\n".join(table_context_dict.values())
+
+        def run_sql_index_query(query_text):
+            try:
+                response = sql_index.as_query_engine(synthesize_response=False).query(query_text)
+            except Exception as e:
+                return f"Error running SQL {e}.\nNot able to retrieve answer."
+            text = str(response)
+            sql = response.extra_info["sql_query"]
+            return f"Here are the details on the SQL table: {table_context_str}\nSQL Query Used: {sql}\nSQL Result: {text}\n"
+            # return f"SQL Query Used: {sql}\nSQL Result: {text}\n"
+
+        return run_sql_index_query
     
 
 #Example prompts

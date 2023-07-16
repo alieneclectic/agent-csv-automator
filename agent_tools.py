@@ -40,9 +40,9 @@ if "df" not in st.session_state:
 class Agent_Tools:
     def initTools():
         tools = [
-            read_tool,
-            write_tool,
-            list_tool,
+            # read_tool,
+            # write_tool,
+            # list_tool,
             # click_element,
             # navigate_browser,
             # previous_webpage,
@@ -54,28 +54,40 @@ class Agent_Tools:
                 func=llm_math_chain.run,
                 description="useful for when you need to answer questions about math. Input should be a valid numerical expression"
             ),
+            # Tool(
+            #     name="Local_Documents_Chain",
+            #     func=Custom_Tools.get_document_retrieval_qa_chain().run,
+            #     description="useful for when you need to answer questions about local documents, documents stored in vector storage, or uploaded documents. Input should be a fully formed question.",
+            #     return_direct=True
+            # ),
+            # Tool(
+            #     name="LlamaIndex",
+            #     func=lambda q: str(index.as_query_engine().query(q)),
+            #     description="useful for when you want to answer questions about local documents. The input to this tool should be a complete english sentence.",
+            #     return_direct=True,
+            # ),
             Tool(
-                name="Local_Documents_Chain",
-                func=Custom_Tools.get_document_retrieval_qa_chain().run,
-                description="useful for when you need to answer questions about local documents, documents stored in vector storage, or uploaded documents. Input should be a fully formed question.",
-                return_direct=True
-            ),
-            Tool(
-                name="CSV_Data_Agent",
+                name="CSV_Data_Retrival_Tool",
                 func=Custom_Tools.get_pandas_dataframe_agent(st.session_state.df).run,
                 description="useful for when you need to answer questions about CSV documents that were uploaded or manipulate a CSVs data stored in a dataframe. This tool leverages the Pandas framwork. Input should be a fully formed question.",
                 return_direct=True
             ),
             Tool(
-                name = "CSV_Generator",
+                name = "CSV_Generator_Tool",
                 func=Custom_Tools.generate_csv_data,
                 description="useful for when you need create or generate CSV data, especially based data from the Local_Documents_Chain and the CSV_Data_Chain",
                 return_direct=True
             ),
             Tool(
-                name="Send_To_Google_Sheets",
+                name="Send_To_Google_Sheets_Tool",
                 func=Custom_Tools.send_to_google_sheets,
-                description="useful for when you need to send or update data in Google Sheets. No query or arguments are required."
+                description="useful for when you need to send or update CSV data in Google Sheets."
+            ),
+            Tool(
+                name="Llama_Index_Agent",
+                func=lambda q: str(st.session_state[st.session_state.query_type].as_query_engine().query(q)),
+                description="useful for when you need to answer questions about local documents, documents stored in vector storage, or uploaded documents, summarizing document information. Input should be a fully formed question.",
+                return_direct=True,
             ),
             # Tool(
             #     name="Zapier_Agent",
@@ -87,11 +99,6 @@ class Agent_Tools:
             #     name="SQL_Data_Agent",
             #     func=Custom_Tools.get_sql_agent,
             #     description="useful for when you need to answer questions about SQL data, or external SQL data using an robust LLM agent. Input should be a fully formed question."
-            # ),
-            # Tool(
-            #     name="CSV_Data_Agent",
-            #     func=Custom_Tools.get_csv_agent_retrieval_chain,
-            #     description="useful for when you need to answer questions about CSV data, or an uploaded CSV using an robust LLM agent. Input should be a fully formed question."
             # ),
             Tool(
                 name = "Search",

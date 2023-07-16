@@ -4,15 +4,31 @@ from langchain.agents import Tool
 from langchain.chains.conversation.memory import ConversationBufferMemory
 from langchain.chat_models import ChatOpenAI
 from langchain.agents import initialize_agent
-
+from pathlib import Path
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
+from dotenv import load_dotenv
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+from llama_index import GPTVectorStoreIndex, download_loader
+
+import openai
+import os
+load_dotenv()
+openai.api_key = os.environ["OPENAI_API_KEY"]
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
-documents = SimpleDirectoryReader("/Users/jason.english/Desktop/verizon-poc/pdfs").load_data()
-print(documents)
+
+documents = SimpleDirectoryReader(Path("docs")).load_data()
 index = VectorStoreIndex.from_documents(documents=documents)
+
+
+# GoogleSheetsReader = download_loader('GoogleSheetsReader')
+# loader = GoogleSheetsReader()
+# documents = loader.load_data()
+# index = GPTVectorStoreIndex.from_documents(documents)
+# index.query('When am I meeting Gordon?')
+
 
 tools = [
     Tool(

@@ -27,11 +27,13 @@ class Agent():
     def initialize_conversational_agent():
 
         custom_prompt = CustomPromptTemplates.fewShotPromptTemplate1()
+        memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
         conversational_agent = initialize_agent(
             tools=Agent_Tools.initTools(),
             llm=llm,
-            agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+            agent="chat-conversational-react-description",
+            #agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
             #agent=AgentType.OPENAI_FUNCTIONS,
             #agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
             verbose=True,
@@ -40,14 +42,26 @@ class Agent():
             #system_message = "Add agent message",
             #retriever=vectorstore.as_retriever(),
             handle_parsing_errors=True,
-            early_stopping_method='generate',
-            agent_instructions="Try the 'CSV_Data' or 'Local_Documents' tool first, Use the other tools if relevent and neccessary. Use the Calculator for any math problems",
-            memory=ConversationBufferMemory(memory_key='chat_history', return_messages=True),
+            #early_stopping_method='generate',
+            #agent_instructions="Try the 'CSV_Data' or 'Local_Documents' tool first, Use the other tools if relevent and neccessary. Use the Calculator for any math problems",
+            memory=memory,
         )
-
-        #print(conversational_agent)
-
         return conversational_agent
+    
+
+    def initialize_llama_index_agent():
+        custom_prompt = CustomPromptTemplates.fewShotPromptTemplate1()
+        memory = ConversationBufferMemory(memory_key="chat_history")
+        llama_index_agent = initialize_agent(
+            tools=Agent_Tools.initTools(),
+            llm=llm,
+            handle_parsing_errors=True,
+            #PromptTemplate=custom_prompt,
+            agent="conversational-react-description",
+            memory=memory
+        )
+        return llama_index_agent
+
     
     def initialize_dataframe_agent(df):
 
@@ -74,11 +88,11 @@ class Agent():
         return sql_agent
 
 
-    def initialize_csv_agent():
+    def initialize_csv_agent(file):
 
         csv_agent = create_csv_agent(
             OpenAI(temperature=0),
-            "titanic.csv",
+            file,
             verbose=True,
             agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         )
