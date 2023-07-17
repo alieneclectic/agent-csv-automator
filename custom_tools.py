@@ -57,6 +57,7 @@ class Custom_Tools():
             Tool(
                     name="LlamaIndex",
                     func=lambda q: str(index.as_query_engine().query(q)),
+                    verbose=True,
                     description="useful for when you want to answer questions about local documents. The input to this tool should be a complete english sentence.",
                     return_direct=True,
                 ),
@@ -65,7 +66,8 @@ class Custom_Tools():
         memory = ConversationBufferMemory(memory_key="chat_history")
         llm = ChatOpenAI(temperature=0)
         llama_agent = initialize_agent(
-            tools, llm, agent="conversational-react-description", memory=memory
+            tools, llm, agent="conversational-react-description", memory=memory,
+            verbose=True
         )
 
         return llama_agent
@@ -196,3 +198,5 @@ class Custom_Tools():
 # Generate a new row of csv data for each state in the East Coast of the USA. The Headline column should include include the state name
 
 # Generate a new row of csv data for each county in the the state of New Jersey and make the Headline column include the county name
+
+# Generate a new row of csv data for each in the the state in the United States and make the Headline column include the state name

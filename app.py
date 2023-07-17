@@ -8,17 +8,19 @@ from agent import Agent
 from pathlib import Path
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import altair as alt
 import openai
 import os
 
 
 def handle_userinput(user_question):
     if user_question:
-        #print(st.session_state.conversation)
-        #if(st.session_state.conversation == None):
-        #agent = Agent.initialize_llama_index_agent()
-        agent = Agent.initialize_conversational_agent()
-        st.session_state.conversation = agent
+
+        # Check if there are any documents uploaded
+        if not st.session_state.uploaded_docs:
+            st.error("Please upload documents before asking a question.")
+            return      
 
         # Truncate or summarize the conversation history if it's too long
         if len(st.session_state.chat_history) > 4000:
@@ -96,9 +98,7 @@ def handle_document_upload():
             st.session_state.uploaded_docs = uploaded_docs
             with st.spinner("Processing"):
                 index = send_docs_to_index(uploaded_docs)
-                
-
-                    
+                            
                           
 def handle_csv_upload():
     with st.sidebar:
@@ -161,9 +161,34 @@ def page_tabs():
 
     with tab3:
         st.header("Data Visualization")
-        # chart_data = pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]})
-        
-        # st.area_chart(chart_data)
+        user_visualization_question = st.text_input("Data visualization questions")
+
+        if user_visualization_question:
+            question = user_qa_question
+            #handle_user_visualization_input(user_qa_question)
+
+        st.write("Data visualization")
+        chart_data = pd.DataFrame(
+            np.random.randn(200, 3),
+            columns=['a', 'b', 'c'])
+
+        st.vega_lite_chart(chart_data, {
+            'mark': {'type': 'circle', 'tooltip': True},
+            'encoding': {
+                    'x': {'field': 'a', 'type': 'quantitative'},
+                    'y': {'field': 'b', 'type': 'quantitative'},
+                    'size': {'field': 'c', 'type': 'quantitative'},
+                    'color': {'field': 'c', 'type': 'quantitative'},
+                }
+            },
+            use_container_width = True
+        )
+
+        # arr = np.random.normal(1, 1, size=100)
+        # fig, ax = plt.subplots()
+        # ax.hist(arr, bins=20)
+
+        # st.pyplot(fig)
 
     
 def main():
@@ -227,9 +252,14 @@ def main():
     if "df_qa" not in st.session_state:
         st.session_state.df_qa = pd.DataFrame()
 
+    agent = Agent.initialize_conversational_agent()
+    st.session_state.conversation = agent
+
     handle_document_upload()
     handle_csv_upload()
     page_tabs()
+
+
 
 if __name__ == '__main__':
     main()
