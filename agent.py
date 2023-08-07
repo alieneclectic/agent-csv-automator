@@ -21,7 +21,7 @@ from langchain.prompts import (
 # human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
 
 
-llm = ChatOpenAI(temperature=0.0, model="gpt-3.5-turbo")
+llm = ChatOpenAI(temperature=0.0, model="gpt-3.5-turbo-16k")
 
 class Agent():
     def initialize_conversational_agent():

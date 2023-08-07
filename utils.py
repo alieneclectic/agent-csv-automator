@@ -31,7 +31,7 @@ PandasCSVReader = download_loader("PandasCSVReader")
 loader = PandasCSVReader()
 
 
-llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo")
+llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
 embeddings = OpenAIEmbeddings()
 # llm = HuggingFaceHub(repo_id="google/flan-t5-xxl", model_kwargs={"temperature":0.5, "max_length":512})
 
@@ -51,7 +51,7 @@ class DocumentStorage():
 
         # # save index to disk
         # index.set_index_id("vector_index")
-        # index.storage_context.persist("./storage")
+        vector_index.storage_context.persist("./storage")
         # # rebuild storage context
         # storage_context = StorageContext.from_defaults(persist_dir="storage")
         # # load index

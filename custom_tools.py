@@ -26,7 +26,7 @@ search = SerpAPIWrapper()
 load_dotenv()
 
 
-llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo")
+llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
 
 class Custom_Tools():
 
@@ -134,8 +134,10 @@ class Custom_Tools():
         document_data = document_chain.run('Using all the content from the uploaded documents. Only return the text and nothing else.')
         csv_data = st.session_state.df.to_csv(index=False)
 
+        filepath = Path('output/feed.csv')
+        
         template = """
-        Use the following CSV data: {csv_data} and text data examples as a reference: {document_data} for context. Generate new CSV data informed by the text data example. The CSV data should exactly match the columns names of the CSV data example. Follow any additional guidance from the following query: {query}. The output must be in CSV format. 
+        Use the following CSV data: {csv_data} and text data examples as a reference: {document_data} for context. Generate completely new CSV data informed by the text data example. The CSV data should exactly match the columns names of the CSV data example. Follow any additional guidance from the following query: {query}. Do not output the CSV directly, only confirm the task is complete and create a link to the file using this path 
         """
         prompt = PromptTemplate(template=template, input_variables=["csv_data", "document_data", "query"])
 
@@ -146,7 +148,7 @@ class Custom_Tools():
         )
 
         # create local file
-        filepath = Path('output/feed.csv')
+        
         response = llm_chain.run(csv_data=csv_data, document_data=document_data, query=query)
         new_df = pd.read_csv(io.StringIO(response), sep=",")
         new_df.to_csv(filepath, index=False)
@@ -163,11 +165,15 @@ class Custom_Tools():
         filepath = Path('service_account.json')
         gc = gspread.oauth(credentials_filename=filepath)
         sh = gc.open("DCO AI Generated")
-        worksheet = sh.add_worksheet(title=title + ct, rows=10, cols=10)
+        worksheet = sh.add_worksheet(title=title + ct, rows=100, cols=12)
         sheet_df = pd.read_csv(Path('output/feed.csv'))
+        sheet_df.fillna("", inplace=True)
         if not sheet_df.empty:
-            worksheet.update([sheet_df.columns.values.tolist()] + sheet_df.values.tolist())
-            return "A new sheet called" + title + ct + "has been generated and sent to Google Sheets successfuly."
+            try:
+                worksheet.update([sheet_df.columns.values.tolist()] + sheet_df.values.tolist())
+                return "A new sheet called" + title + ct + "has been generated and sent to Google Sheets successfuly."
+            except Exception as e:
+                return f"Error running send to Google Sheets {e}."
         else:
             return "No csv data found."
 

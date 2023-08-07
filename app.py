@@ -6,12 +6,14 @@ from utils import DocumentStorage, DocumentProcessing
 from custom_tools import Custom_Tools
 from agent import Agent
 from pathlib import Path
+from llama_index.evaluation import ResponseEvaluator
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import altair as alt
 import openai
 import os
+import gspread
 
 
 def handle_userinput(user_question):
@@ -88,24 +90,21 @@ def send_docs_to_index(uploadedfile):
 
 def handle_document_upload():
     with st.sidebar:
-        st.subheader("Documents")
-        # st.write("Uploaded documents:")
-        # filelist = list_all_docs()
-        # write_bullets(filelist)
+        st.subheader("Upload to Vector Database")
         uploaded_docs = st.file_uploader(
             "Upload documents here", type=['pdf', 'docx', 'txt'], accept_multiple_files=True)
-        if uploaded_docs:
+        if uploaded_docs and not st.session_state.get('docs_uploaded', False):
             st.session_state.uploaded_docs = uploaded_docs
             with st.spinner("Processing"):
                 index = send_docs_to_index(uploaded_docs)
-                            
-                          
+            st.session_state.docs_uploaded = True
+
 def handle_csv_upload():
     with st.sidebar:
-        st.subheader("CSVs")
+        st.subheader("CSVs Uploader")
         uploaded_csv = st.file_uploader(
             "Upload CSVs here", type=['csv'], accept_multiple_files=True)
-        if uploaded_csv:
+        if uploaded_csv and not st.session_state.get('csv_uploaded', False):
             st.session_state.uploaded_csv = uploaded_csv
             with st.spinner("Processing"):
                 dfs = []
@@ -116,29 +115,78 @@ def handle_csv_upload():
                 concat_frame = pd.concat(dfs, ignore_index=True)
                 st.session_state.df = concat_frame
                 csv_tool = Custom_Tools.get_pandas_dataframe_agent(st.session_state.df)
+            st.session_state.csv_uploaded = True
+
+google_creds_filepath = Path('service_account.json')
+def get_all_rows_from_sheet(sheet_name):
+    # Authenticate with Google Sheets using the service account
+    
+    gc = gspread.oauth(credentials_filename=google_creds_filepath)
+    
+    # Open the desired spreadsheet
+    sh = gc.open("DCO AI Generated")
+    
+    # Select the desired worksheet
+    worksheet = sh.worksheet(sheet_name)
+    
+    # Fetch all rows from the worksheet
+    all_rows = worksheet.get_all_values()
+
+    # Convert the list of lists into a pandas DataFrame
+    # The first row is considered as the header
+    df = pd.DataFrame(all_rows[1:], columns=all_rows[0])
+    
+    return df
+
+
+def sync_to_google_sheets(df, sheet_name):
+    # Authenticate with Google Sheets using the service account
+    gc = gspread.oauth(credentials_filename=google_creds_filepath)
+    
+    # Open the desired spreadsheet
+    sh = gc.open("DCO AI Generated")
+    
+    # Select the desired worksheet
+    worksheet = sh.worksheet(sheet_name)
+    
+    # Clear the existing content
+    worksheet.clear()
+    
+    # Update the worksheet with the new data
+    worksheet.update([df.columns.values.tolist()] + df.values.tolist())
 
 
 def page_tabs():
-    tab1, tab2, tab3 = st.tabs(["Data Chat", "Data QA", "Data Visualization",])
+    tab1, tab2, tab3, tab4 = st.tabs(["Data Chat", "Feed Manager", "Data QA", "Data Visualization"])
 
     with tab1:
         st.header("Data Chat")
         user_question = st.text_input("Upload and ask a question about your documents:")
 
-        index_type = st.checkbox("Semantic Search", value=st.session_state.index_type)
+        index_type = st.checkbox("Full Search", value=st.session_state.index_type)
 
         if index_type != st.session_state.index_type:
             st.session_state.index_type = index_type
             if index_type:
-                st.session_state.query_type = "vector_index"
-            else:
                 st.session_state.query_type = "list_index"
+            else:
+                st.session_state.query_type = "vector_index"
             
 
         if user_question:
             handle_userinput(user_question)
 
     with tab2:
+        st.header("Feed Manager")
+        df = get_all_rows_from_sheet('DCO Feed-07/24/2023, 07:44:23')
+        modified_df = st.data_editor(df)
+
+        # Sync the modified data to Google Sheets
+        if st.button("Sync Data"):
+            sync_to_google_sheets(modified_df, 'DCO Feed-07/24/2023, 07:44:23')
+            st.success("Data synced to Google Sheets successfully!")
+
+    with tab3:
         st.header("Data QA")
         uploaded_qa_docs = st.file_uploader(
             "Upload documents here", type=['csv'], accept_multiple_files=True)
@@ -159,7 +207,7 @@ def page_tabs():
         if user_qa_question:
             handle_user_qa_input(user_qa_question)
 
-    with tab3:
+    with tab4:
         st.header("Data Visualization")
         user_visualization_question = st.text_input("Data visualization questions")
 
@@ -219,7 +267,7 @@ def main():
                 left: 0px;
                 width: 200px;
                 height: 50px;
-                filter: invert(1) grayscale(1) brightness(2);
+                /* filter: invert(1) grayscale(1) brightness(2); */
             }
             </style>
             """
@@ -232,7 +280,7 @@ def main():
     if 'index_type' not in st.session_state:
         st.session_state.index_type = False
     if "query_type" not in st.session_state:
-        st.session_state.query_type = "list_index"
+        st.session_state.query_type = "vector_index"
     if "vector_index" not in st.session_state:
         st.session_state.vector_index = None
     if "list_index" not in st.session_state:

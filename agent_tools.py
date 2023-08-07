@@ -26,7 +26,7 @@ file_toolkit = FileManagementToolkit(
 read_tool, write_tool, list_tool = file_toolkit
 load_dotenv()
 
-llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo")
+llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
 
 search = SerpAPIWrapper()
 llm_math_chain = LLMMathChain.from_llm(llm=llm, verbose=True)
